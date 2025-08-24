@@ -122,7 +122,7 @@ function App() {
               {/* Header */}
               <div className="text-center mb-12 relative">
                 <h1 className="text-4xl font-bold text-white mb-4">
-                  Student Quiz Platform
+                  Become Zero to Hero-alom
                 </h1>
                 <p className="text-xl text-gray-400">
                   Test your knowledge with interactive quizzes
