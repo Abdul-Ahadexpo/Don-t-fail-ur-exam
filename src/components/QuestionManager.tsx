@@ -18,7 +18,8 @@ export function QuestionManager({ questions, onQuestionsChange }: QuestionManage
       question: '',
       options: ['', '', '', ''],
       correctAnswer: '',
-      explanation: ''
+      explanation: '',
+      partialCredit: false
     };
     setEditingQuestion(newQuestion);
     setShowAddForm(true);
@@ -188,7 +189,8 @@ function QuestionForm({ question, onSave, onCancel }: QuestionFormProps) {
       question: '',
       options: ['', '', '', ''],
       correctAnswer: '',
-      explanation: ''
+      explanation: '',
+      partialCredit: false
     }
   );
 
@@ -332,6 +334,23 @@ function QuestionForm({ question, onSave, onCancel }: QuestionFormProps) {
               placeholder="Explain why this is the correct answer..."
             />
           </div>
+
+          {formData.type === 'short-answer' && (
+            <div>
+              <label className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg border border-gray-600">
+                <input
+                  type="checkbox"
+                  checked={formData.partialCredit || false}
+                  onChange={(e) => setFormData({ ...formData, partialCredit: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-gray-300 font-medium">Enable Partial Credit</span>
+                  <p className="text-gray-400 text-sm">Award points based on word matching (recommended for short answers)</p>
+                </div>
+              </label>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-3 pt-4">
             <button

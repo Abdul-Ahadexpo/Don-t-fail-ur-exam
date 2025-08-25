@@ -12,6 +12,7 @@ interface ResultsProps {
 
 export function Results({ score, answers, totalQuestions, onRetake, onReview }: ResultsProps) {
   const correctAnswers = answers.filter(a => a.isCorrect).length;
+  const partialCreditAnswers = answers.filter(a => a.partialScore !== undefined && a.partialScore > 0 && a.partialScore < 1);
   const incorrectAnswers = answers.filter(a => !a.isCorrect);
 
   const getScoreColor = () => {
@@ -87,16 +88,58 @@ export function Results({ score, answers, totalQuestions, onRetake, onReview }: 
           </div>
         </div>
 
+        {/* Partial Credit Summary */}
+        {partialCreditAnswers.length > 0 && (
+          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8">
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center">
+              <Award className="w-6 h-6 text-amber-600 mr-2" />
+              Partial Credit Earned ({partialCreditAnswers.length})
+            </h2>
+            
+            <div className="space-y-4">
+              {partialCreditAnswers.map((answer, index) => (
+                <div key={answer.questionId} className="border-l-4 border-amber-400 pl-4 py-3 bg-amber-900/20 rounded-r-lg">
+                  <h3 className="font-semibold text-white mb-2">
+                    {answer.question.question}
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Award className="w-4 h-4 text-amber-600" />
+                      <span className="text-amber-300">
+                        Earned: <span className="font-semibold">{Math.round(answer.partialScore! * 100)}%</span>
+                      </span>
+                    </div>
+                    <div className="text-amber-200">
+                      Matched {answer.matchedWords?.length || 0} out of {answer.totalWords || 0} key words
+                    </div>
+                    {answer.matchedWords && answer.matchedWords.length > 0 && (
+                      <div className="text-amber-200">
+                        Matched words: <span className="font-semibold">{answer.matchedWords.join(', ')}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-2 mt-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-green-300">
+                        Complete answer: <span className="font-semibold">{answer.question.correctAnswer}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Incorrect Answers Review */}
-        {incorrectAnswers.length > 0 && (
+        {incorrectAnswers.filter(a => !a.partialScore || a.partialScore === 0).length > 0 && (
           <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center">
               <XCircle className="w-6 h-6 text-red-600 mr-2" />
-              Questions to Review ({incorrectAnswers.length})
+              Questions to Review ({incorrectAnswers.filter(a => !a.partialScore || a.partialScore === 0).length})
             </h2>
             
             <div className="space-y-6">
-              {incorrectAnswers.map((answer, index) => (
+              {incorrectAnswers.filter(a => !a.partialScore || a.partialScore === 0).map((answer, index) => (
                 <div key={answer.questionId} className="border-l-4 border-red-400 pl-4 py-3 bg-red-900/20 rounded-r-lg">
                   <h3 className="font-semibold text-white mb-2">
                     {answer.question.question}

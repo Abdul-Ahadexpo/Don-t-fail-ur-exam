@@ -5,6 +5,7 @@ import { ProgressBar } from './ProgressBar';
 import { Timer } from './Timer';
 import { Results } from './Results';
 import { useTimer } from '../hooks/useTimer';
+import { isAnswerCorrect } from '../utils/answerMatching';
 import { ChevronRight, Play, Pause } from 'lucide-react';
 
 interface QuizProps {
@@ -36,13 +37,21 @@ export function Quiz({ questions, onComplete, timeLimit }: QuizProps) {
   const userAnswer = answers.find(a => a.questionId === currentQuestion?.id)?.userAnswer || '';
 
   const handleAnswer = (answer: string) => {
-    const isCorrect = answer.toLowerCase().trim() === currentQuestion.correctAnswer.toLowerCase().trim();
+    const result = isAnswerCorrect(
+      answer, 
+      currentQuestion.correctAnswer, 
+      currentQuestion.type,
+      currentQuestion.partialCredit
+    );
     
     const newAnswer: QuizAnswer = {
       questionId: currentQuestion.id,
       userAnswer: answer,
-      isCorrect,
-      question: currentQuestion
+      isCorrect: result.isCorrect,
+      question: currentQuestion,
+      partialScore: result.partialScore,
+      matchedWords: result.matchedWords,
+      totalWords: result.totalWords
     };
 
     const updatedAnswers = answers.filter(a => a.questionId !== currentQuestion.id);
@@ -59,7 +68,12 @@ export function Quiz({ questions, onComplete, timeLimit }: QuizProps) {
 
   const completeQuiz = () => {
     const timeSpent = Math.round((Date.now() - startTime) / 1000);
-    const score = (answers.filter(a => a.isCorrect).length / shuffledQuestions.length) * 100;
+    
+    // Calculate score using partial credit
+    const totalScore = answers.reduce((sum, answer) => {
+      return sum + (answer.partialScore || (answer.isCorrect ? 1 : 0));
+    }, 0);
+    const score = (totalScore / shuffledQuestions.length) * 100;
     
     const attempt: QuizAttempt = {
       id: Date.now().toString(),

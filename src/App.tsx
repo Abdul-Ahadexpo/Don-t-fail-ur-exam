@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SharedQuiz } from './types/quiz';
 import { Question, QuizAttempt } from './types/quiz';
 import { Quiz } from './components/Quiz';
 import { QuestionManager } from './components/QuestionManager';
@@ -8,19 +9,31 @@ import { Results } from './components/Results';
 import { Tutorial } from './components/Tutorial';
 import { HowToUse } from './components/HowToUse';
 import { EmptyState } from './components/EmptyState';
+import { ShareQuiz } from './components/ShareQuiz';
+import { SharedQuizTaker } from './components/SharedQuizTaker';
+import { SharedQuizManager } from './components/SharedQuizManager';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { sampleQuestions } from './data/sampleQuestions';
-import { BookOpen, Play, Settings, BarChart3, Clock, HelpCircle, GraduationCap } from 'lucide-react';
+import { getSharedQuiz } from './utils/shareUtils';
+import { BookOpen, Play, Settings, BarChart3, Clock, HelpCircle, GraduationCap, Share2, Users } from 'lucide-react';
 
-type AppMode = 'home' | 'quiz' | 'results' | 'review' | 'manage' | 'progress';
+type AppMode = 'home' | 'quiz' | 'results' | 'review' | 'manage' | 'progress' | 'shared-quiz' | 'shared-manager';
 
 function App() {
+  // Check for shared quiz in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const sharedQuizId = urlParams.get('quiz');
+  const [sharedQuiz, setSharedQuiz] = useState<SharedQuiz | null>(
+    sharedQuizId ? getSharedQuiz(sharedQuizId) : null
+  );
+  
   const [questions, setQuestions] = useLocalStorage<Question[]>('quiz-questions', sampleQuestions);
   const [attempts, setAttempts] = useLocalStorage<QuizAttempt[]>('quiz-attempts', []);
   const [currentMode, setCurrentMode] = useState<AppMode>('home');
   const [currentAttempt, setCurrentAttempt] = useState<QuizAttempt | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showHowToUse, setShowHowToUse] = useState(false);
+  const [showShareQuiz, setShowShareQuiz] = useState(false);
   const [quizSettings, setQuizSettings] = useState({
     timeLimit: 0, // 0 means no time limit
     randomOrder: true,
@@ -44,7 +57,58 @@ function App() {
     setCurrentMode('review');
   };
 
+  const handleShareQuiz = () => {
+    if (questions.length === 0) {
+      alert('Please add some questions before sharing a quiz.');
+      return;
+    }
+    setShowShareQuiz(true);
+  };
+
+  const handleQuizShared = (newSharedQuiz: SharedQuiz) => {
+    setShowShareQuiz(false);
+    // Optionally redirect to shared quiz manager
+  };
+
+  const handleSharedQuizComplete = () => {
+    // Clear URL and return to home
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setSharedQuiz(null);
+    setCurrentMode('home');
+  };
+
   const renderContent = () => {
+    // Handle shared quiz taking
+    if (currentMode === 'shared-quiz' && sharedQuiz) {
+      if (!sharedQuiz.isActive) {
+        return (
+          <div className="min-h-screen bg-gray-900 py-8 px-4">
+            <div className="max-w-2xl mx-auto text-center">
+              <div className="bg-gray-800 rounded-2xl border border-gray-700 p-8">
+                <h1 className="text-3xl font-bold text-white mb-4">Quiz Not Available</h1>
+                <p className="text-gray-300 mb-6">
+                  This quiz is no longer active or has expired.
+                </p>
+                <button
+                  onClick={handleSharedQuizComplete}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                >
+                  Go to Home
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      
+      return (
+        <SharedQuizTaker 
+          sharedQuiz={sharedQuiz} 
+          onComplete={handleSharedQuizComplete}
+        />
+      );
+    }
+
     switch (currentMode) {
       case 'quiz':
         return (
@@ -105,6 +169,12 @@ function App() {
             </div>
           </div>
         );
+      case 'shared-manager':
+        return (
+          <SharedQuizManager
+            onClose={() => setCurrentMode('home')}
+          />
+        );
       default:
         // Show empty state if no questions exist
         if (questions.length === 0) {
@@ -122,7 +192,7 @@ function App() {
               {/* Header */}
               <div className="text-center mb-12 relative">
                 <h1 className="text-4xl font-bold text-white mb-4">
-                  Become Zero to Hero-alom
+                  Student Quiz Platform
                 </h1>
                 <p className="text-xl text-gray-400">
                   Test your knowledge with interactive quizzes
@@ -224,6 +294,25 @@ function App() {
                   <h3 className="text-lg font-semibold text-white mb-2">Manage</h3>
                   <p className="text-sm text-gray-400">Add, edit, or import questions</p>
                 </button>
+
+                <button
+                  onClick={handleShareQuiz}
+                  disabled={questions.length === 0}
+                  className="bg-gray-800 border border-gray-700 hover:border-gray-600 rounded-xl p-6 hover:bg-gray-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <Share2 className="w-8 h-8 text-cyan-600 mb-3" />
+                  <h3 className="text-lg font-semibold text-white mb-2">Share Quiz</h3>
+                  <p className="text-sm text-gray-400">Create shareable quiz links</p>
+                </button>
+
+                <button
+                  onClick={() => setCurrentMode('shared-manager')}
+                  className="bg-gray-800 border border-gray-700 hover:border-gray-600 rounded-xl p-6 hover:bg-gray-700 transform hover:scale-105 transition-all duration-200"
+                >
+                  <Users className="w-8 h-8 text-indigo-600 mb-3" />
+                  <h3 className="text-lg font-semibold text-white mb-2">Shared Quizzes</h3>
+                  <p className="text-sm text-gray-400">Manage shared quiz results</p>
+                </button>
               </div>
 
               {/* Recent Stats */}
@@ -263,6 +352,13 @@ function App() {
       {renderContent()}
       {showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
       {showHowToUse && <HowToUse onClose={() => setShowHowToUse(false)} />}
+      {showShareQuiz && (
+        <ShareQuiz
+          questions={questions}
+          onClose={() => setShowShareQuiz(false)}
+          onQuizShared={handleQuizShared}
+        />
+      )}
     </>
   );
 }
