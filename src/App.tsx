@@ -5,6 +5,7 @@ import { Quiz } from './components/Quiz';
 import { QuestionManager } from './components/QuestionManager';
 import { ProgressTracker } from './components/ProgressTracker';
 import { ReviewMode } from './components/ReviewMode';
+import { FlashcardMode } from './components/FlashcardMode';
 import { Results } from './components/Results';
 import { Tutorial } from './components/Tutorial';
 import { HowToUse } from './components/HowToUse';
@@ -16,8 +17,9 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { sampleQuestions } from './data/sampleQuestions';
 import { getSharedQuiz } from './utils/shareUtils';
 import { BookOpen, Play, Settings, BarChart3, Clock, HelpCircle, GraduationCap, Share2, Users } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
-type AppMode = 'home' | 'quiz' | 'results' | 'review' | 'manage' | 'progress' | 'shared-quiz' | 'shared-manager';
+type AppMode = 'home' | 'quiz' | 'results' | 'review' | 'flashcards' | 'manage' | 'progress' | 'shared-quiz' | 'shared-manager';
 
 function App() {
   // Check for shared quiz in URL
@@ -131,6 +133,13 @@ function App() {
       case 'review':
         return (
           <ReviewMode
+            questions={questions}
+            onExit={() => setCurrentMode('home')}
+          />
+        );
+      case 'flashcards':
+        return (
+          <FlashcardMode
             questions={questions}
             onExit={() => setCurrentMode('home')}
           />
@@ -275,6 +284,16 @@ function App() {
                   <BookOpen className="w-8 h-8 text-green-600 mb-3" />
                   <h3 className="text-lg font-semibold text-white mb-2">Review Mode</h3>
                   <p className="text-sm text-gray-400">Study questions with answers</p>
+                </button>
+
+                <button
+                  onClick={() => setCurrentMode('flashcards')}
+                  disabled={questions.length === 0}
+                  className="bg-gray-800 border border-gray-700 hover:border-gray-600 rounded-xl p-6 hover:bg-gray-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <Eye className="w-8 h-8 text-purple-600 mb-3" />
+                  <h3 className="text-lg font-semibold text-white mb-2">Flashcards</h3>
+                  <p className="text-sm text-gray-400">Study with flipping cards</p>
                 </button>
 
                 <button
